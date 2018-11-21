@@ -1,16 +1,64 @@
 import React, { Component } from "react";
-import { Text, TextInput } from "react-native";
+import { Text } from "react-native";
+import firebase from "firebase";
 
-import { Button, Card, CardSection, Field } from "./common";
+import { Button, Card, CardSection, Field, Spinner } from "./common";
 
 class LoginForm extends Component {
   state = {
     email: "",
     password: "",
-    name: ""
+    error: "",
+    loading: false
   };
 
+  onButtonPress() {
+    const { email, password } = this.state;
+
+    this.setState({ loading: true });
+
+    // attempt to sign in
+    // new account created for new emails
+    // return error message if password is wrong
+    firebase
+      .auth()
+      .signInWithEmailAndPassword(email, password)
+      // .then(this.onLoginSuccess.bind(this))
+      .catch(() => {
+        firebase
+          .auth()
+          .createUserWithEmailAndPassword(email, password)
+          // .then(this.onLoginSuccess.bind(this))
+          .catch(this.onLoginFail.bind(this));
+      });
+  }
+
+  // onLoginSuccess() {
+  //   this.setState({
+  //     email: "",
+  //     password: "",
+  //     error: "",
+  //     loading: false
+  //   });
+  // }
+
+  onLoginFail() {
+    this.setState({
+      error: "Authentication Failed.",
+      loading: false
+    });
+  }
+
+  renderButton() {
+    if (this.state.loading) {
+      return <Spinner size="small" />;
+    }
+    return <Button onPress={this.onButtonPress.bind(this)}>Login</Button>;
+  }
+
   render() {
+    console.log(this.state);
+
     return (
       <Card>
         <CardSection>
@@ -32,12 +80,21 @@ class LoginForm extends Component {
           />
         </CardSection>
 
-        <CardSection>
-          <Button>Login</Button>
-        </CardSection>
+        <CardSection>{this.renderButton()}</CardSection>
+
+        {/* error message will only show when the user fails to log in. */}
+        <Text style={styles.errorTextStyle}>{this.state.error}</Text>
       </Card>
     );
   }
 }
+
+const styles = {
+  errorTextStyle: {
+    fontSize: 20,
+    color: "red",
+    alignSelf: "center"
+  }
+};
 
 export default LoginForm;
